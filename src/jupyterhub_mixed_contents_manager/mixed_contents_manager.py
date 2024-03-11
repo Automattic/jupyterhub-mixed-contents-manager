@@ -61,7 +61,7 @@ else:
     from IPython.utils.importstring import import_item
 
 
-def parse_child_contents_managers_config(conf: str) -> Dict[str, str]:
+def parse_mount_points_config(conf: str) -> Dict[str, str]:
     "e.g. /hdfs:::hdfscm.HDFSContentsManager,/:::jupyter_server.services.contents.filemanager.FileContentsManager"
     if conf:
         return {
@@ -73,26 +73,23 @@ def parse_child_contents_managers_config(conf: str) -> Dict[str, str]:
 
 
 class MixedContentsManager(ContentsManager):
-    child_contents_managers_config = Unicode(
+    mount_points_config = Unicode(
         "", help="mount/path:::contents_manager_class[,...]", config=True
     )
-    child_contents_managers = {}
 
     def __init__(self, **kwargs):
         super(MixedContentsManager, self).__init__(**kwargs)
         kwargs.update({"parent": self})
-        self.managers = {
+        self.mount_points_managers = {
             mount_point: import_item(cls)
-            for mount_point, cls in parse_child_contents_managers_config(
-                self.child_contents_managers_config
-            )
+            for mount_point, cls in parse_mount_points_config(self.mount_points_config)
         }
 
     def get_mount_point(self, path: str):
         return next(
             (
                 mount_point
-                for mount_point in sorted(self.managers.keys())
+                for mount_point in sorted(self.mount_points_managers.keys())
                 if pathlib.PurePath(path).is_relative_to(pathlib.PurePath(mount_point))
             ),
             None,
@@ -106,7 +103,7 @@ class MixedContentsManager(ContentsManager):
         mount_point = self.get_mount_point(path)
         if mount_point:
             return (
-                self.managers.get(mount_point),
+                self.mount_points_managers.get(mount_point),
                 mount_point,
                 self.get_child_path(mount_point, path),
             )
@@ -173,13 +170,13 @@ class MixedContentsManager(ContentsManager):
         # root exists
         if len(path) == 0:
             return True
-        if path in self.managers.keys():
+        if path in self.mount_points_managers.keys():
             return True
         return False
 
     @path_dispatch1
     def is_hidden(self, path):
-        if (len(path) == 0) or path in self.managers.keys():
+        if (len(path) == 0) or path in self.mount_points_managers.keys():
             return False
         raise NotImplementedError("...." + path)
 
