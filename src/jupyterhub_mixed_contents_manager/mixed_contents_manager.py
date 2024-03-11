@@ -7,58 +7,10 @@
 # https://github.com/jupyter/jupyter-drive/blob/master/jupyterdrive/mixednbmanager.py
 
 from typing import Dict
-import sys
 import pathlib
 
-
-#
-# Jupyterhub compatibility, leaving it in in case someone else uses this.
-#
-
-# loaded as a content manager, we can check wether IPython/jupyter is in sys
-# module, then the answer is unambiguous/
-
-DEFINITIVELY_JUPYTER = "notebook" in sys.modules
-
-# we might want to check wether this is in an IPython context (ie there is
-# IPython is sys.modules, but then we need to check version)
-
-MAYBE_IPYTHON = "IPython" in sys.modules
-
-if MAYBE_IPYTHON and not DEFINITIVELY_JUPYTER:
-    import IPython
-
-    # IPython 4.0+ context, so we definitively
-    # should have Jupyter installed
-    if IPython.version_info >= (4, 0):
-        DEFINITIVELY_JUPYTER = True
-
-JUPYTER = False
-
-if DEFINITIVELY_JUPYTER:
-    JUPYTER = True
-else:
-    # none of above in sys.module,
-    # we might be at install time.
-    # guess for the best.
-    try:
-        # if jupyter is installed, assume jupyter
-        import notebook.nbextensions
-
-        # silence pyflakes
-        notebook.nbextensions
-        JUPYTER = True
-    except ImportError:
-        pass
-
-if JUPYTER:
-    from notebook.services.contents.manager import ContentsManager
-    from traitlets.traitlets import Unicode
-    from traitlets import import_item
-else:
-    from IPython.html.services.contents.manager import ContentsManager
-    from IPython.utils.traitlets import Unicode
-    from IPython.utils.importstring import import_item
+from jupyter_server.services.contents.manager import ContentsManager
+from traitlets import traitlets, import_item
 
 
 def parse_mount_points_config(conf: str) -> Dict[str, str]:
@@ -73,7 +25,7 @@ def parse_mount_points_config(conf: str) -> Dict[str, str]:
 
 
 class MixedContentsManager(ContentsManager):
-    mount_points_config = Unicode(
+    mount_points_config = traitlets.Unicode(
         "", help="mount/path:::contents_manager_class[,...]", config=True
     )
 
