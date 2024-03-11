@@ -34,7 +34,9 @@ class MixedContentsManager(ContentsManager):
         kwargs.update({"parent": self})
         self.mount_points_managers = {
             mount_point: import_item(cls)
-            for mount_point, cls in parse_mount_points_config(self.mount_points_config)
+            for mount_point, cls in parse_mount_points_config(
+                self.mount_points_config
+            ).items()
         }
 
     def get_mount_point(self, path: str):
