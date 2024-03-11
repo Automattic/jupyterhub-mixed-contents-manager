@@ -46,9 +46,14 @@ class MixedContentsManager(ContentsManager):
         self.mount_points_managers = {
             mount_point: import_item(cls)
             for mount_point, cls in parse_mount_points_config(
-                self.mount_points_config
+                ":::jupyter_server.services.contents.filemanager.FileContentsManager,hdfs-home:::hdfscm.HDFSContentsManager",
+                # self.mount_points_config
             ).items()
         }
+        assert self.path_lookup("") == ""
+        assert self.mount_points_managers[""]
+        assert self.mount_points_managers["hdfs-home"]
+        assert self.get("")
 
     def get_mount_point(self, path: str):
         return next(
