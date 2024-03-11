@@ -50,7 +50,7 @@ class MixedContentsManager(ContentsManager):
                 # self.mount_points_config
             ).items()
         }
-        assert self.path_lookup("") == ""
+        assert self.path_lookup("")[1] == ""
         assert self.mount_points_managers[""]
         assert self.mount_points_managers["hdfs-home"]
         assert self.get("")
@@ -59,7 +59,9 @@ class MixedContentsManager(ContentsManager):
         return next(
             (
                 mount_point
-                for mount_point in sorted(self.mount_points_managers.keys())
+                for mount_point in sorted(
+                    self.mount_points_managers.keys(), reverse=True
+                )
                 if pathlib.PurePath(f"/{path}").is_relative_to(
                     pathlib.PurePath(f"/{mount_point}")
                 )
