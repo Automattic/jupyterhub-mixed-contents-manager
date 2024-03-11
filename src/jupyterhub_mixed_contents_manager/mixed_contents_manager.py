@@ -14,7 +14,11 @@ from traitlets import traitlets, import_item
 
 
 def parse_mount_points_config(conf: str) -> Dict[str, str]:
-    "e.g. /hdfs:::hdfscm.HDFSContentsManager,/:::jupyter_server.services.contents.filemanager.FileContentsManager"
+    """
+    e.g. hdfs:::hdfscm.HDFSContentsManager,:::jupyter_server.services.contents.filemanager.FileContentsManager
+
+    Note that leading/trailing slashes are omitted.
+    """
     if conf:
         return {
             path_class.split(":::")[0]: path_class.split(":::")[1]
@@ -26,7 +30,14 @@ def parse_mount_points_config(conf: str) -> Dict[str, str]:
 
 class MixedContentsManager(ContentsManager):
     mount_points_config = traitlets.Unicode(
-        "", help="mount/path:::contents_manager_class[,...]", config=True
+        "",
+        help="""
+        Format: mount/path:::contents_manager_class[,...]
+        e.g. hdfs:::hdfscm.HDFSContentsManager,:::jupyter_server.services.contents.filemanager.FileContentsManager
+
+        Note that leading/trailing slashes are omitted, so root '/' becomes '' 
+        """,
+        config=True,
     )
 
     def __init__(self, **kwargs):
@@ -44,13 +55,19 @@ class MixedContentsManager(ContentsManager):
             (
                 mount_point
                 for mount_point in sorted(self.mount_points_managers.keys())
-                if pathlib.PurePath(path).is_relative_to(pathlib.PurePath(mount_point))
+                if pathlib.PurePath(f"/{path}").is_relative_to(
+                    pathlib.PurePath(f"/{mount_point}")
+                )
             ),
             None,
         )
 
     def get_child_path(self, mount_point: str, path: str):
-        return str(pathlib.PurePath(path).relative_to(pathlib.PurePath(mount_point)))
+        return str(
+            pathlib.PurePath(f"/{path}").relative_to(
+                pathlib.PurePath(f"/{mount_point}")
+            )
+        )
 
     def path_lookup(self, path: str):
         "returns manager, mount_point, child_path"
@@ -118,10 +135,7 @@ class MixedContentsManager(ContentsManager):
 
     @path_dispatch1
     def dir_exists(self, path):
-        # root exists
-        if len(path) == 0:
-            return True
-        if path in self.mount_points_managers.keys():
+        if len(path) == 0 or path in self.mount_points_managers.keys():
             return True
         return False
 
