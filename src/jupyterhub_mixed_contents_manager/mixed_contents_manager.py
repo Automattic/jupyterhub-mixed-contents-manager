@@ -3,7 +3,7 @@
 # Copyright (c) IPython Development Team.
 # Distributed under the terms of the Modified BSD License.
 
-# File adapted from:
+# Originally adapted from:
 # https://github.com/jupyter/jupyter-drive/blob/master/jupyterdrive/mixednbmanager.py
 
 from typing import Dict, Any
@@ -55,27 +55,27 @@ def path_lookup(mount_points_managers: Dict[str, Any], path: str):
     )
 
 
-def path_dispatch1(method_name):
+def path_dispatch1(method):
     def f(self, path, *args, **kwargs):
         manager, _mount_point, child_path = self._path_lookup(path)
-        return getattr(manager, method_name)(child_path, *args, **kwargs)
+        return getattr(manager, method.__name__)(child_path, *args, **kwargs)
 
     return f
 
 
-def path_dispatch2(method_name):
+def path_dispatch2(method):
     def f(self, other, path, *args, **kwargs):
         manager, _mount_point, child_path = self._path_lookup(path)
-        return getattr(manager, method_name)(other, child_path, *args, **kwargs)
+        return getattr(manager, method.__name__)(other, child_path, *args, **kwargs)
 
     return f
 
 
-def path_dispatch_kwarg(method_name):
+def path_dispatch_kwarg(method):
     def f(self, path=""):
         manager, _mount_point, child_path = self._path_lookup(path)
         if manager is not None:
-            return getattr(manager, method_name)(path=child_path)
+            return getattr(manager, method.__name__)(path=child_path)
 
     return f
 
@@ -124,7 +124,7 @@ class MixedContentsManager(ContentsManager):
                 # self.mount_points_config
             ).items()
         }
-        assert self.path_lookup("")[1] == ""
+        assert self._path_lookup("")[1] == ""
         assert self.mount_points_managers[""], "Root mount point required"
         assert self.mount_points_managers["hdfs-home"]
         assert self.get("")
