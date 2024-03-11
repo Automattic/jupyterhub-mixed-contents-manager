@@ -114,9 +114,6 @@ class MixedContentsManager(ContentsManager):
 
         return _wrapper_method
 
-    # ContentsManager API part 1: methods that must be
-    # implemented in subclasses.
-
     @path_dispatch1
     def dir_exists(self, path):
         # root exists
