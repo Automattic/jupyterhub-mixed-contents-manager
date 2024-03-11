@@ -79,7 +79,7 @@ class MixedContentsManager(ContentsManager):
     def path_lookup(self, path: str):
         "returns manager, mount_point, child_path"
         mount_point = self.get_mount_point(path)
-        if mount_point:
+        if mount_point is not None:
             return (
                 self.mount_points_managers.get(mount_point),
                 mount_point,
