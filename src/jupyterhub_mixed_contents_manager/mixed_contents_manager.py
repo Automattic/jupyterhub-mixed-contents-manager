@@ -130,7 +130,7 @@ class MixedContentsManager(ContentsManager):
         assert self.get("")
 
     def _path_lookup(self, path: str):
-        return path_lookup(self.mount_point_managers, path)
+        return path_lookup(self.mount_points_managers, path)
 
     @path_dispatch1
     def dir_exists(self, path):
