@@ -79,9 +79,9 @@ def transform_child_model(mount_point: str, model):
     print("***************")
     print("before:")
     pprint(model)
-    if model and is_iterable(model) and "path" in model:
+    if model and is_iterable(model) and "path" in model and "type" in model:
         model["path"] = get_full_path(mount_point, model["path"])
-        if model.get("content"):
+        if model["type"] == "directory":
             model["content"] = [
                 transform_child_model(mount_point, m) for m in model["content"]
             ]
