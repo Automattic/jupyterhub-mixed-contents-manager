@@ -74,12 +74,20 @@ def is_iterable(x) -> bool:
 
 def transform_child_model(mount_point: str, model):
     "Mutating. Update the paths in a returned model to match the mount point."
+    from pprint import pprint
+
+    print("***************")
+    print("before:")
+    pprint(model)
     if model and is_iterable(model) and "path" in model:
         model["path"] = get_full_path(mount_point, model["path"])
         if model.get("content"):
             model["content"] = [
                 transform_child_model(mount_point, m) for m in model["content"]
             ]
+    print("after:")
+    pprint(model)
+    print("***************")
     return model
 
 
