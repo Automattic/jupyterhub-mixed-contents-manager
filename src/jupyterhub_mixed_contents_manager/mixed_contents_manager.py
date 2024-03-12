@@ -168,7 +168,7 @@ class MixedContentsManager(ContentsManager):
         kwargs.update({"parent": self})
         from pprint import pprint
 
-        pprint(**kwargs)
+        pprint(kwargs)
         self.mount_points_managers = {
             mount_point: import_item(cls)(**kwargs)
             for mount_point, cls in parse_mount_points_config(
