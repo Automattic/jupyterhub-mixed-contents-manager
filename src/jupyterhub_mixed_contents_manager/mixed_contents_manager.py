@@ -34,6 +34,11 @@ import pathlib
 from jupyter_server.services.contents.manager import ContentsManager
 from traitlets import traitlets, import_item
 
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 
 def parse_mount_points_config(conf: str) -> Dict[str, str]:
     """
@@ -78,7 +83,11 @@ def path_lookup(mount_points_managers: Dict[str, Any], path: str):
 
 def path_dispatch1(method):
     def f(self, path, *args, **kwargs):
-        manager, _mount_point, child_path = self._path_lookup(path)
+        logger.debug(f"{method.__name__} {path}")
+        manager, mount_point, child_path = self._path_lookup(path)
+        logger.debug(
+            f"path_dispatch1: {method.__name__} `{path}` -> mount: `{mount_point}` child_path: `{child_path}`"
+        )
         return getattr(manager, method.__name__)(child_path, *args, **kwargs)
 
     return f
@@ -86,7 +95,10 @@ def path_dispatch1(method):
 
 def path_dispatch2(method):
     def f(self, other, path, *args, **kwargs):
-        manager, _mount_point, child_path = self._path_lookup(path)
+        manager, mount_point, child_path = self._path_lookup(path)
+        logger.debug(
+            f"path_dispatch2: {method.__name__} `{path}` -> mount: `{mount_point}` child_path: `{child_path}`"
+        )
         return getattr(manager, method.__name__)(other, child_path, *args, **kwargs)
 
     return f
@@ -94,9 +106,11 @@ def path_dispatch2(method):
 
 def path_dispatch_kwarg(method):
     def f(self, path=""):
-        manager, _mount_point, child_path = self._path_lookup(path)
-        if manager is not None:
-            return getattr(manager, method.__name__)(path=child_path)
+        manager, mount_point, child_path = self._path_lookup(path)
+        logger.debug(
+            f"path_dispatch_kwarg: {method.__name__} `{path}` -> mount: `{mount_point}` child_path: `{child_path}`"
+        )
+        return getattr(manager, method.__name__)(path=child_path)
 
     return f
 
@@ -109,16 +123,19 @@ def path_dispatch_rename(method):
     def f(self, path_a, path_b):
         manager_a, mount_point_a, child_path_a = self._path_lookup(path_a)
         manager_b, mount_point_b, child_path_b = self._path_lookup(path_b)
+        logger.debug(
+            f"path_dispatch_rename (arg a): {method.__name__} `{path_a}` -> mount: `{mount_point_a}` child_path: `{child_path_a}`"
+        )
+        logger.debug(
+            f"path_dispatch_rename (arg b): {method.__name__} `{path_b}` -> mount: `{mount_point_b}` child_path: `{child_path_b}`"
+        )
 
         if mount_point_a != mount_point_b:
             raise ValueError(
                 "Does not know how to move things across contents manager mountpoints"
             )
 
-        if manager_a is not None:
-            return getattr(manager_a, method.__name__)(child_path_a, child_path_b)
-        else:
-            return method(self, path_a, path_b)
+        return getattr(manager_a, method.__name__)(child_path_a, child_path_b)
 
     return f
 
