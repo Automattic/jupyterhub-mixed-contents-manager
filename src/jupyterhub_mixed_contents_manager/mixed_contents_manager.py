@@ -139,7 +139,7 @@ class MixedContentsManager(ContentsManager):
         super(MixedContentsManager, self).__init__(**kwargs)
         kwargs.update({"parent": self})
         self.mount_points_managers = {
-            mount_point: import_item(cls)()
+            mount_point: import_item(cls)(**kwargs)
             for mount_point, cls in parse_mount_points_config(
                 self.mount_points_config
             ).items()
