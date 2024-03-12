@@ -74,20 +74,12 @@ def is_iterable(x) -> bool:
 
 def transform_child_model(mount_point: str, model):
     "Mutating. Update the paths in a returned model to match the mount point."
-    from pprint import pprint
-
-    print("<<<<<<<<<<<<")
-    print("before:")
-    pprint(model)
     if model and is_iterable(model) and "path" in model and "type" in model:
         model["path"] = get_full_path(mount_point, model["path"])
         if model["type"] == "directory" and model.get("content"):
             model["content"] = [
                 transform_child_model(mount_point, m) for m in model["content"]
             ]
-    print("after:")
-    pprint(model)
-    print(">>>>>>>>>>>>")
     return model
 
 
@@ -221,20 +213,17 @@ class MixedContentsManager(ContentsManager):
         config=True,
     )
 
-    def __init__(self, **kwargs):
-        super(MixedContentsManager, self).__init__(**kwargs)
-        kwargs.update({"parent": self})
-        from pprint import pprint
-
-        print("*******************")
-        pprint(kwargs)
+    def __init__(self, *args, **kwargs):
+        super(MixedContentsManager, self).__init__(*args, **kwargs)
         self.mount_points_managers = {
-            mount_point: import_item(cls)()
+            mount_point: import_item(cls)(*args, **kwargs)
             for mount_point, cls in parse_mount_points_config(
                 self.mount_points_config
             ).items()
         }
-        pprint(self.mount_points_managers)
+        assert "" in self.mount_points_managers, "Root manager is required"
+        # Required for as jupyterlab-git hacks into the internals:
+        self.root_dir = self.mount_points_managers[""].root_dir
 
     def _path_lookup(self, path: str):
         return path_lookup(self.mount_points_managers, path)
