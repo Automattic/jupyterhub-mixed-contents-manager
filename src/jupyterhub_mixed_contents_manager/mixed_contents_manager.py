@@ -57,6 +57,32 @@ handler.setFormatter(formatter)
 root.addHandler(handler)
 
 
+def get_full_path(mount_point: str, child_path: str) -> str:
+    stripped_child_path = child_path.strip("/")
+    return str(
+        pathlib.PurePath(f"/{mount_point}") / pathlib.PurePath(stripped_child_path)
+    )
+
+
+def is_iterable(x) -> bool:
+    try:
+        iter(x)
+        return True
+    except TypeError:
+        return False
+
+
+def transform_child_model(mount_point: str, model):
+    "Mutating. Update the paths in a returned model to match the mount point."
+    if model and is_iterable(model) and "path" in model:
+        model["path"] = get_full_path(mount_point, model["path"])
+        if model.get("content"):
+            model["content"] = [
+                transform_child_model(mount_point, m) for m in model["content"]
+            ]
+    return model
+
+
 def parse_mount_points_config(conf: str) -> Dict[str, str]:
     """
     e.g. hdfs:::hdfscm.HDFSContentsManager,:::jupyter_server.services.contents.filemanager.FileContentsManager
@@ -113,7 +139,9 @@ def path_dispatch1(method):
         logger.debug(
             f"path_dispatch1: {method.__name__} `{path}` -> mount: `{mount_point}` child_path: `{child_path}`"
         )
-        return getattr(manager, method.__name__)(child_path, *args, **kwargs)
+        return transform_child_model(
+            mount_point, getattr(manager, method.__name__)(child_path, *args, **kwargs)
+        )
 
     return f
 
@@ -124,7 +152,10 @@ def path_dispatch2(method):
         logger.debug(
             f"path_dispatch2: {method.__name__} `{path}` -> mount: `{mount_point}` child_path: `{child_path}`"
         )
-        return getattr(manager, method.__name__)(other, child_path, *args, **kwargs)
+        return transform_child_model(
+            mount_point,
+            getattr(manager, method.__name__)(other, child_path, *args, **kwargs),
+        )
 
     return f
 
@@ -135,7 +166,9 @@ def path_dispatch_kwarg(method):
         logger.debug(
             f"path_dispatch_kwarg: {method.__name__} `{path}` -> mount: `{mount_point}` child_path: `{child_path}`"
         )
-        return getattr(manager, method.__name__)(path=child_path)
+        return transform_child_model(
+            mount_point, getattr(manager, method.__name__)(path=child_path)
+        )
 
     return f
 
@@ -160,7 +193,10 @@ def path_dispatch_rename(method):
                 "Does not know how to move things across contents manager mountpoints"
             )
 
-        return getattr(manager_a, method.__name__)(child_path_a, child_path_b)
+        return transform_child_model(
+            mount_point_a,
+            getattr(manager_a, method.__name__)(child_path_a, child_path_b),
+        )
 
     return f
 
