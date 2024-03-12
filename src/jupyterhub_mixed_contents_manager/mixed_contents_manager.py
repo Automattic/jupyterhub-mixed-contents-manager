@@ -77,9 +77,13 @@ def get_mount_point(mount_points_dict: Dict[str, Any], path: str):
 
 
 def get_child_path(mount_point: str, path: str):
-    return str(
+    child_path = str(
         pathlib.PurePath(f"/{path}").relative_to(pathlib.PurePath(f"/{mount_point}"))
     )
+    # All paths are absolute, this means we are dealing with the root, which is '' instead of '.'
+    if child_path == ".":
+        return ""
+    return child_path
 
 
 def path_lookup(mount_points_managers: Dict[str, Any], path: str):
@@ -168,13 +172,15 @@ class MixedContentsManager(ContentsManager):
         kwargs.update({"parent": self})
         from pprint import pprint
 
+        print("*******************")
         pprint(kwargs)
         self.mount_points_managers = {
-            mount_point: import_item(cls)(**kwargs)
+            mount_point: import_item(cls)()
             for mount_point, cls in parse_mount_points_config(
                 self.mount_points_config
             ).items()
         }
+        pprint(self.mount_points_managers)
 
     def _path_lookup(self, path: str):
         return path_lookup(self.mount_points_managers, path)
