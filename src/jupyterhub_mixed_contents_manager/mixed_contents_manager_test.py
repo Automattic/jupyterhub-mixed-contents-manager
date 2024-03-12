@@ -11,11 +11,17 @@ def test_get_mount_point():
     }
     checks = {
         "": "",
+        "/": "",
         "o": "",
+        "/o": "",
         "b": "b",
+        "/b": "b",
         "b/o": "b",
+        "/b/o": "b",
         "b/c": "b/c",
+        "/b/c": "b/c",
         "b/c/o": "b/c",
+        "/b/c/o": "b/c",
     }
     for path, mount in checks.items():
         assert mixed_contents_manager.get_mount_point(mount_points, path) == mount
@@ -31,3 +37,6 @@ def test_mixed_contents_manager():
     m = mixed_contents_manager.MixedContentsManager(config=c)
 
     assert m.get("")["content"][0]["name"] == "LICENSE"
+    from pprint import pprint
+
+    pprint(m.get("src"))

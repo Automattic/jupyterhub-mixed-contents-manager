@@ -1,4 +1,10 @@
-"""A contents manager that combine multiple content managers."""
+"""
+A contents manager that combine multiple content managers.
+
+Note: With content managers, all paths are absolute, and have their
+leading/trailing slashes removed, but should work with paths with slashes as
+well.
+"""
 
 # Copyright (c) 2014, The Jupyter and IPython development team
 # All rights reserved.
@@ -67,18 +73,22 @@ def parse_mount_points_config(conf: str) -> Dict[str, str]:
 
 
 def get_mount_point(mount_points_dict: Dict[str, Any], path: str):
+    stripped_path = path.strip("/")
     return next(
         mount_point
         for mount_point in sorted(mount_points_dict.keys(), reverse=True)
-        if pathlib.PurePath(f"/{path}").is_relative_to(
+        if pathlib.PurePath(f"/{stripped_path}").is_relative_to(
             pathlib.PurePath(f"/{mount_point}")
         )
     )
 
 
 def get_child_path(mount_point: str, path: str):
+    stripped_path = path.strip("/")
     child_path = str(
-        pathlib.PurePath(f"/{path}").relative_to(pathlib.PurePath(f"/{mount_point}"))
+        pathlib.PurePath(f"/{stripped_path}").relative_to(
+            pathlib.PurePath(f"/{mount_point}")
+        )
     )
     # All paths are absolute, this means we are dealing with the root, which is '' instead of '.'
     if child_path == ".":
