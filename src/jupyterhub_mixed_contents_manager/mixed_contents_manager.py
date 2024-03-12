@@ -27,6 +27,8 @@
 # Originally adapted from:
 # https://github.com/jupyter/jupyter-drive/blob/master/jupyterdrive/mixednbmanager.py
 
+import logging
+import sys
 from typing import Dict, Any
 import copy
 import pathlib
@@ -34,10 +36,19 @@ import pathlib
 from jupyter_server.services.contents.manager import ContentsManager
 from traitlets import traitlets, import_item
 
-import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+root = logging.getLogger()
+root.setLevel(logging.DEBUG)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+root.addHandler(handler)
 
 
 def parse_mount_points_config(conf: str) -> Dict[str, str]:
@@ -122,7 +133,7 @@ def path_dispatch_rename(method):
 
     def f(self, path_a, path_b):
         manager_a, mount_point_a, child_path_a = self._path_lookup(path_a)
-        manager_b, mount_point_b, child_path_b = self._path_lookup(path_b)
+        _manager_b, mount_point_b, child_path_b = self._path_lookup(path_b)
         logger.debug(
             f"path_dispatch_rename (arg a): {method.__name__} `{path_a}` -> mount: `{mount_point_a}` child_path: `{child_path_a}`"
         )
@@ -155,6 +166,9 @@ class MixedContentsManager(ContentsManager):
     def __init__(self, **kwargs):
         super(MixedContentsManager, self).__init__(**kwargs)
         kwargs.update({"parent": self})
+        from pprint import pprint
+
+        pprint(**kwargs)
         self.mount_points_managers = {
             mount_point: import_item(cls)(**kwargs)
             for mount_point, cls in parse_mount_points_config(
